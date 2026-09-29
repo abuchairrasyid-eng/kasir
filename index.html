@@ -495,9 +495,9 @@
 
 <script>
 // ======= GANTI DENGAN URL WEB APP APPS SCRIPT ANDA =======
-const API_URL = "https://script.google.com/macros/s/AKfycbyTpYF1DExohzl5fG0JPuCB0RMwDuDEWJwaESzJ8cDoEaa-LJbZaBScivgZ0Pwia3Ou/exec";
+const API_URL = "PASTE_URL_WEB_APP_APPS_SCRIPT_DI_SINI";
 // ======= GANTI DENGAN TOKEN RAHASIA YANG SAMA PERSIS SEPERTI DI Code.gs =======
-const API_TOKEN = "325380";
+const API_TOKEN = "GANTI_DENGAN_KODE_RAHASIA_ANDA";
 // ======= NAMA TOKO (tampil di layar login dan di struk pelanggan) =======
 const NAMA_TOKO = "Kasir";
 document.title = NAMA_TOKO;
@@ -594,6 +594,7 @@ document.querySelectorAll(".navlink[data-view]").forEach(btn => {
     $("orderpanel").classList.remove("open"); $("scrim").classList.remove("show");
     document.querySelector(".shell").classList.toggle("solo", btn.dataset.view !== "kasir");
     document.querySelector(".content").scrollTop = 0; window.scrollTo(0,0);
+    if(btn.dataset.view==="kasir") muatProdukKasir();
     if(btn.dataset.view==="laporan") muatLaporan();
     if(btn.dataset.view==="produk") muatProdukAdmin();
   });
@@ -935,7 +936,7 @@ function muatProdukAdmin(){
 }
 $("produkTableBody").addEventListener("click", e=>{
   const b = e.target.closest("[data-toggle]"); if(!b) return;
-  apiPost({action: b.dataset.aktif==="true" ? "hapusProduk" : "aktifkanProduk", id:b.dataset.toggle}).then(()=>muatProdukAdmin()).catch(err=>toast(err.message));
+  apiPost({action: b.dataset.aktif==="true" ? "hapusProduk" : "aktifkanProduk", id:b.dataset.toggle}).then(()=>{ muatProdukAdmin(); muatProdukKasir(); }).catch(err=>toast(err.message));
 });
 // kompres foto (maks lebar 600px) agar ringan dikirim
 function bacaDanKompresGambar(file){
@@ -968,7 +969,7 @@ $("btnSimpanProduk").addEventListener("click", ()=>{
     if(!res.ok) throw new Error(res.error||"Gagal menyimpan menu.");
     ["pNama","pHarga","pStok","pKategori"].forEach(id=>$(id).value = "");
     $("pGambar").value = ""; $("pGambarPreview").classList.add("hidden"); gambarBase64Baru = "";
-    toast("Menu ditambahkan"); muatProdukAdmin();
+    toast("Menu ditambahkan"); muatProdukAdmin(); muatProdukKasir();
   }).catch(err=>toast(err.message)).finally(()=>{ btn.disabled = false; btn.textContent = "Tambah produk"; });
 });
 
