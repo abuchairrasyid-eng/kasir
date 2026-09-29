@@ -319,6 +319,7 @@
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></symbol>
 </svg>
 
 <!-- ============ LOGIN ============ -->
@@ -353,6 +354,7 @@
       <button class="navlink active" data-view="kasir"><svg class="ic"><use href="#i-receipt"/></svg>Kasir</button>
       <button class="navlink" data-view="laporan"><svg class="ic"><use href="#i-chart"/></svg>Laporan</button>
       <button class="navlink" id="tabProduk" data-view="produk"><svg class="ic"><use href="#i-plate"/></svg>Produk</button>
+      <button class="navlink" id="tabAkun" data-view="akun"><svg class="ic"><use href="#i-user"/></svg>Akun</button>
       <button class="navlink" id="btnSettingsNav"><svg class="ic"><use href="#i-sliders"/></svg>Atur</button>
     </nav>
     <div class="rail-foot">
@@ -425,6 +427,27 @@
       <div class="scroll"><table class="tbl"><thead><tr><th></th><th>Menu</th><th class="r">Harga</th><th class="r">Stok</th><th>Kategori</th><th>Status</th><th></th></tr></thead><tbody id="produkTableBody"></tbody></table></div>
     </section>
 
+    <section id="view-akun" class="view">
+      <div class="page-head"><div><h1>Akun</h1><div class="sub">Tambahkan akun kasir baru, atau hapus yang sudah tidak dipakai.</div></div></div>
+      <div class="paper-form">
+        <div class="form-grid">
+          <label class="field"><span>Nama</span><input id="uNama"></label>
+          <label class="field"><span>Username</span><input id="uUsername" autocapitalize="none" spellcheck="false"></label>
+          <label class="field"><span>Password</span><input id="uPassword" type="text"></label>
+          <label class="field"><span>Peran</span>
+            <select id="uPeran" style="width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:8px 0 10px;font-size:17px;outline:none;border-radius:0;">
+              <option value="Kasir" selected>Kasir</option>
+              <option value="Owner">Owner</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="cta inline" id="btnSimpanUser">Tambah akun</button>
+        </div>
+      </div>
+      <div class="scroll"><table class="tbl"><thead><tr><th>Nama</th><th>Username</th><th>Peran</th><th></th></tr></thead><tbody id="userTableBody"></tbody></table></div>
+    </section>
+
   </main>
 
   <aside class="orderwrap" id="orderpanel" aria-label="Pesanan">
@@ -495,9 +518,9 @@
 
 <script>
 // ======= GANTI DENGAN URL WEB APP APPS SCRIPT ANDA =======
-const API_URL = "https://script.google.com/macros/s/AKfycbyTpYF1DExohzl5fG0JPuCB0RMwDuDEWJwaESzJ8cDoEaa-LJbZaBScivgZ0Pwia3Ou/exec";
+const API_URL = "PASTE_URL_WEB_APP_APPS_SCRIPT_DI_SINI";
 // ======= GANTI DENGAN TOKEN RAHASIA YANG SAMA PERSIS SEPERTI DI Code.gs =======
-const API_TOKEN = "325380";
+const API_TOKEN = "GANTI_DENGAN_KODE_RAHASIA_ANDA";
 // ======= NAMA TOKO (tampil di layar login dan di struk pelanggan) =======
 const NAMA_TOKO = "Kasir";
 document.title = NAMA_TOKO;
@@ -554,7 +577,7 @@ function tampilkanApp(){
   $("userNama").textContent = user.nama; $("userPeran").textContent = user.peran;
   $("sapaan").textContent = sapa() + ", " + user.nama.split(" ")[0];
   $("tanggalHariIni").textContent = new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  if(user.peran !== "Owner") $("tabProduk").classList.add("hidden");
+  if(user.peran !== "Owner") { $("tabProduk").classList.add("hidden"); $("tabAkun").classList.add("hidden"); }
   $("toggleCetak").checked = cetakAktif;
   updateCtaLabel(); updatePayUI(); renderCart();
   muatProdukKasir(); muatHold();
@@ -597,6 +620,7 @@ document.querySelectorAll(".navlink[data-view]").forEach(btn => {
     if(btn.dataset.view==="kasir") muatProdukKasir();
     if(btn.dataset.view==="laporan") muatLaporan();
     if(btn.dataset.view==="produk") muatProdukAdmin();
+    if(btn.dataset.view==="akun") muatUserAdmin();
   });
 });
 
@@ -971,6 +995,36 @@ $("btnSimpanProduk").addEventListener("click", ()=>{
     $("pGambar").value = ""; $("pGambarPreview").classList.add("hidden"); gambarBase64Baru = "";
     toast("Menu ditambahkan"); muatProdukAdmin(); muatProdukKasir();
   }).catch(err=>toast(err.message)).finally(()=>{ btn.disabled = false; btn.textContent = "Tambah produk"; });
+});
+
+// ---------- akun (owner) ----------
+function muatUserAdmin(){
+  apiGet("getUser").then(res=>{
+    if(!res.ok){ toast(res.error||"Gagal memuat akun."); return; }
+    const list = res.data || [];
+    $("userTableBody").innerHTML = list.length ? list.map(u=>`
+      <tr><td>${esc(u.Nama)}</td><td>${esc(u.Username)}</td><td>${esc(u.Peran)}</td>
+        <td class="r"><button class="linkbtn danger" data-hapus-user="${esc(u.ID)}">Hapus</button></td></tr>`).join("")
+      : '<tr><td colspan="4" class="empty-row">Belum ada akun lain selain kamu.</td></tr>';
+  }).catch(err=>toast(err.message));
+}
+$("btnSimpanUser").addEventListener("click", ()=>{
+  const nama = $("uNama").value.trim(), username = $("uUsername").value.trim(), password = $("uPassword").value, peran = $("uPeran").value;
+  if(!nama || !username || !password){ toast("Isi nama, username, dan password dulu."); return; }
+  const btn = $("btnSimpanUser"); btn.disabled = true; btn.textContent = "Menyimpan...";
+  apiPost({action:"tambahUser", nama, username, password, peran}).then(res=>{
+    if(!res.ok) throw new Error(res.error||"Gagal menambah akun.");
+    ["uNama","uUsername","uPassword"].forEach(id=>$(id).value = ""); $("uPeran").value = "Kasir";
+    toast("Akun ditambahkan"); muatUserAdmin();
+  }).catch(err=>toast(err.message)).finally(()=>{ btn.disabled = false; btn.textContent = "Tambah akun"; });
+});
+$("userTableBody").addEventListener("click", e=>{
+  const b = e.target.closest("[data-hapus-user]"); if(!b) return;
+  if(!confirm("Hapus akun ini? Kasir yang bersangkutan tidak akan bisa login lagi.")) return;
+  apiPost({action:"hapusUser", id:b.dataset.hapusUser}).then(res=>{
+    if(!res.ok) throw new Error(res.error||"Gagal menghapus akun.");
+    muatUserAdmin();
+  }).catch(err=>toast(err.message));
 });
 
 // ---------- mulai ----------
